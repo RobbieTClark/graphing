@@ -41,10 +41,13 @@ class Window(ABC):
 class Variables_Win(Window):
     rbtn_map = {1: 'red', 2: 'green', 3: 'blue'} # Value: Color
     vars: List[str] # Variable names
+    selected_indexes: List[int] = []
+    
     def __init__(self, root: Tk) -> None:
         super().__init__(root)
         self.root.title('Variables')
         self.axis_var = IntVar()
+        self.axis_var.set(1)
         # Widgets
         # x axis button --------------
         x_rbtn = Radiobutton(
@@ -94,7 +97,9 @@ class Variables_Win(Window):
             self.root,
             width = 20,
             font = fonts['list_text'],
-            selectmode = 'multiple'
+            selectmode = 'multiple',
+            exportselection = False,
+            activestyle = 'none',
         )
         self.vars_list.bind("<<ListboxSelect>>", self.var_selection)
         self.vars_list.grid(
@@ -106,9 +111,18 @@ class Variables_Win(Window):
         )
         # ------------------------------
     def var_selection(self, event) -> None:
-        pass
+        for i in self.vars_list.curselection():
+            self.vars_list.select_clear(i)
+            if i not in self.selected_indexes:
+                self.vars_list.itemconfig(i, {'bg': self.rbtn_map[self.axis_var.get()]})
+                self.selected_indexes.append(i)
+            else:
+                self.vars_list.itemconfig(i, {'bg': 'white'})
+                self.selected_indexes.remove(i)
 
-    def update(self, variables: List[str]):
+    def update(self, variables: List[str]) -> None:
+        self.vars_list.delete(0, END)
+        self.selected_indexes = []
         for var in variables:
             self.vars_list.insert(END, var)
         self.vars = variables
@@ -180,7 +194,8 @@ class Main_App:
         self.files = Listbox(
             self.root,
             width = 30,
-            font = fonts['list_text']
+            font = fonts['list_text'],
+            exportselection = False
         )
         self.files.bind("<<ListboxSelect>>", self.file_selection)
         self.files.grid(
