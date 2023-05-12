@@ -3,9 +3,13 @@ from typing import List, Dict
 import pandas as pd
 
 
-from tkinter import Tk, Frame, Listbox, Scrollbar, Label, Toplevel, Button
-from tkinter.constants import N, EW, DISABLED, NORMAL
-
+from tkinter import (
+    Tk, Frame, Listbox, Scrollbar, Label, 
+    Toplevel, Button, filedialog
+)
+from tkinter.constants import N, EW, DISABLED, NORMAL, END
+from os import listdir, getcwd
+from os.path import isfile, join
 
 fonts = {
     "btn_text": ("Calibri", 12, "bold"),
@@ -44,6 +48,7 @@ class Help_Win(Window):
         self.root.title('Help')
 
 class Main_App:
+    file_directory: str = ''
     def __init__(self, root: Tk) -> None:
         self.root = root
         self.root.protocol("WM_DELETE_WINDOW", self.quit_ui)
@@ -56,7 +61,7 @@ class Main_App:
         # Update files button --------------
         self.update_files_btn = Button(
             self.root,
-            command = self.update_files,
+            command = self.get_files,
             text = 'Update Files',
             font = fonts["btn_text"]
         )
@@ -147,14 +152,20 @@ class Main_App:
             pady = (4, 4),
         )
         # ----------------------------------
-    def update_files(self) -> None:
-        pass
+ 
     def set_directory(self) -> None:
-        pass
+        self.file_directory = filedialog.askdirectory() + '/'
+        self.get_files()
     def file_selection(self) -> None:
         pass
     def start_graphing(self) -> None:
         pass
+    def get_files(self):
+        self.files.delete(0, END)
+        for file in listdir(self.file_directory):
+            if isfile(join(self.file_directory, file)) and (file[-3:] == 'csv' or file[-4:] == 'xlsx'):
+                self.files.insert(END, file)
+        
 
     def quit_ui(self) -> None:
         self.vars_win.quit()
