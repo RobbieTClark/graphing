@@ -41,11 +41,13 @@ class Window(ABC):
 class Variables_Win(Window):
     rbtn_map = {1: 'red', 2: 'green', 3: 'blue'} # Value: Color
     vars: List[str] # Variable names
-    selected_indexes: List[int] = []
+    selected_indexes = {1: [], 2: [], 3: []} # Indexes of selected variables and their corresponding axis 1,2,3 for x,y,z resp
     
     def __init__(self, root: Tk) -> None:
         super().__init__(root)
         self.root.title('Variables')
+        self.root.geometry('222x320')
+        self.root.resizable(0, 0)
         self.axis_var = IntVar()
         self.axis_var.set(1)
         # Widgets
@@ -91,11 +93,11 @@ class Variables_Win(Window):
             column = 2,
         )
         #------------------------------
-
         # Variable list ----------------
         self.vars_list = Listbox(
             self.root,
-            width = 20,
+            width = 30,
+            height = 17,
             font = fonts['list_text'],
             selectmode = 'multiple',
             exportselection = False,
@@ -113,16 +115,17 @@ class Variables_Win(Window):
     def var_selection(self, event) -> None:
         for i in self.vars_list.curselection():
             self.vars_list.select_clear(i)
-            if i not in self.selected_indexes:
-                self.vars_list.itemconfig(i, {'bg': self.rbtn_map[self.axis_var.get()]})
-                self.selected_indexes.append(i)
+            axis = self.axis_var.get()
+            if i not in self.selected_indexes[axis]:
+                self.vars_list.itemconfig(i, {'bg': self.rbtn_map[axis]})
+                self.selected_indexes[axis].append(i)
             else:
                 self.vars_list.itemconfig(i, {'bg': 'white'})
-                self.selected_indexes.remove(i)
+                self.selected_indexes[axis].remove(i)
 
     def update(self, variables: List[str]) -> None:
         self.vars_list.delete(0, END)
-        self.selected_indexes = []
+        self.selected_indexes = {1: [], 2: [], 3: []}
         for var in variables:
             self.vars_list.insert(END, var)
         self.vars = variables
@@ -137,6 +140,8 @@ class Main_App:
     data: pd.DataFrame
     def __init__(self, root: Tk) -> None:
         self.root = root
+        self.root.geometry('222x320')
+        self.root.resizable(0, 0)
         self.root.protocol("WM_DELETE_WINDOW", self.quit_ui)
         self.root.title('Graphing App')
         # Child windows
@@ -262,10 +267,11 @@ class Main_App:
         pass
     
     def get_files(self) -> None:
-        self.files.delete(0, END)
-        for file in listdir(self.directory):
-            if isfile(join(self.directory, file)) and (file[-3:] == 'csv' or file[-3:] == 'xls' or file[-4:] == 'xlsx'):
-                self.files.insert(END, file)
+        if self.directory != '':
+            self.files.delete(0, END)
+            for file in listdir(self.directory):
+                if isfile(join(self.directory, file)) and (file[-3:] == 'csv' or file[-3:] == 'xls' or file[-4:] == 'xlsx'):
+                    self.files.insert(END, file)
         
     def quit_ui(self) -> None:
         self.vars_win.quit()
