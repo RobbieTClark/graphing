@@ -6,7 +6,7 @@ import numpy as np
 from tkinter import (
     Tk, Frame, Listbox, Scrollbar, Label, 
     Toplevel, Button, filedialog, Radiobutton,
-    IntVar
+    IntVar, StringVar
 )
 from tkinter.constants import N, EW, DISABLED, NORMAL, END
 from os import listdir, getcwd
@@ -39,25 +39,26 @@ class Window(ABC):
         self.root.destroy()
 
 class Variables_Win(Window):
-    rbtn_map = {1: 'red', 2: 'green', 3: 'blue'} # Value: Color
+    rbtn_map = {'x': 'red', 'y': 'blue'} # Value: Color
     vars: List[str] # Variable names
-    selected_indexes = {1: [], 2: [], 3: []} # Indexes of selected variables and their corresponding axis 1,2,3 for x,y,z resp
+    selected_indexes = {'x': [], 'y': []} # Indexes of selected variables for x, y
     
     def __init__(self, root: Tk) -> None:
         super().__init__(root)
         self.root.title('Variables')
         self.root.geometry('222x320')
         self.root.resizable(0, 0)
-        self.axis_var = IntVar()
-        self.axis_var.set(1)
+        self.axis_var = StringVar()
+        self.axis_var.set('x')
         # Widgets
         # x axis button --------------
+        axis = 'x'
         x_rbtn = Radiobutton(
             self.root,
-            text = 'x',
+            text = axis,
             font = fonts['btn_text'],
-            fg = self.rbtn_map[1],
-            value = 1,
+            fg = self.rbtn_map[axis],
+            value = axis,
             variable = self.axis_var
         )
         x_rbtn.grid(
@@ -66,31 +67,18 @@ class Variables_Win(Window):
         )
         # ----------------------------
         # y axis button --------------
+        axis = 'y'
         y_rbtn = Radiobutton(
             self.root,
-            text = 'y',
+            text = axis,
             font = fonts['btn_text'],
-            fg = self.rbtn_map[2],
-            value = 2,
+            fg = self.rbtn_map[axis],
+            value = axis,
             variable = self.axis_var
         )
         y_rbtn.grid(
             row = 0,
             column = 1,
-        )
-        # -----------------------------
-        # z axis button ---------------
-        z_rbtn = Radiobutton(
-            self.root,
-            text = 'z',
-            font = fonts['btn_text'],
-            fg = self.rbtn_map[3],
-            value = 3,
-            variable = self.axis_var
-        )
-        z_rbtn.grid(
-            row = 0,
-            column = 2,
         )
         #------------------------------
         # Variable list ----------------
@@ -107,25 +95,32 @@ class Variables_Win(Window):
         self.vars_list.grid(
             row = 1,
             column = 0,
-            columnspan = 3,
+            columnspan = 2,
             padx = 4,
             pady = (4, 4)
         )
         # ------------------------------
+
     def var_selection(self, event) -> None:
         for i in self.vars_list.curselection():
             self.vars_list.select_clear(i)
             axis = self.axis_var.get()
-            if i not in self.selected_indexes[axis]:
-                self.vars_list.itemconfig(i, {'bg': self.rbtn_map[axis]})
-                self.selected_indexes[axis].append(i)
+            if i in sum(self.selected_indexes.values(), []): # If the variable is already selected
+                if i not in self.selected_indexes[axis]: # If variable is selected by a different axis
+                    print(f'{self.vars_list.get(i)} is already selected by {axis}-axis')
+                else:
+                    self.vars_list.itemconfig(i, {'bg': 'white'}) # Deselect
+                    self.selected_indexes[axis].remove(i)
             else:
-                self.vars_list.itemconfig(i, {'bg': 'white'})
-                self.selected_indexes[axis].remove(i)
+                if axis == 'x' and len(self.selected_indexes['x']) == 1:
+                    print('Can only select one x-axis variable, deselect and reselect to change')
+                else:
+                    self.vars_list.itemconfig(i, {'bg': self.rbtn_map[axis]}) # Allow selection
+                    self.selected_indexes[axis].append(i)
 
     def update(self, variables: List[str]) -> None:
         self.vars_list.delete(0, END)
-        self.selected_indexes = {1: [], 2: [], 3: []}
+        self.selected_indexes = {'x': [], 'y': []}
         for var in variables:
             self.vars_list.insert(END, var)
         self.vars = variables
