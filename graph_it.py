@@ -259,7 +259,17 @@ class Main_App:
         self.vars_win.update(df.columns)
 
     def start_graphing(self) -> None:
-        pass
+        self.fig, self.ax = plt.subplots()
+        self.lines = []
+        for i in self.vars_win.selected_indexes['y']:
+            self.lines.append(
+                self.ax.plot(
+                self.data[:,self.vars_win.selected_indexes['x'][0]],
+                self.data[:,i],
+                label = self.vars_win.vars_list.get(i)
+                )
+            )
+        plt.show()
     
     def get_files(self) -> None:
         if self.directory != '':
