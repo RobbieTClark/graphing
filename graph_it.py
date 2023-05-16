@@ -13,7 +13,6 @@ from os import listdir, getcwd
 from os.path import isfile, join
 from threading import Thread
 import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
 
 fonts = {
     "btn_text": ("Calibri", 12, "bold"),
@@ -21,6 +20,7 @@ fonts = {
 }
 
 class Window(ABC):
+    '''Abstract base class for child windows'''
     def __init__(self, root: Tk) -> None:
         
         # Window UI is a child of the UI using master root
@@ -29,16 +29,20 @@ class Window(ABC):
         self.root.protocol("WM_DELETE_WINDOW", self.root.withdraw)
 
     def show(self) -> None:
+        '''Display window on screen'''
         if self.root.state() == "withdrawn":
             self.root.deiconify()
         else:
             self.root.withdraw()
     
     def quit(self) -> None:
+        '''Function for cleaning up before the window is destroyed'''
         self.root.quit()
         self.root.destroy()
 
 class Variables_Win(Window):
+    '''Window for displaying what the variable names are within a file that can be plotted,
+    allows user to select what variables to plot'''
     rbtn_map = {'x': 'red', 'y': 'blue'} # Value: Color
     vars: List[str] # Variable names
     selected_indexes = {'x': [], 'y': []} # Indexes of selected variables for x, y
@@ -102,6 +106,7 @@ class Variables_Win(Window):
         # ------------------------------
 
     def var_selection(self, event) -> None:
+        '''Triggered when user clicks a variable in the variable list''' 
         for i in self.vars_list.curselection():
             self.vars_list.select_clear(i)
             axis = self.axis_var.get()
@@ -114,11 +119,12 @@ class Variables_Win(Window):
             else:
                 if axis == 'x' and len(self.selected_indexes['x']) == 1:
                     print('Can only select one x-axis variable, deselect and reselect to change')
-                else:
-                    self.vars_list.itemconfig(i, {'bg': self.rbtn_map[axis]}) # Allow selection
+                else: # Allow selection
+                    self.vars_list.itemconfig(i, {'bg': self.rbtn_map[axis]}) 
                     self.selected_indexes[axis].append(i)
 
     def update(self, variables: List[str]) -> None:
+        '''Removes current variables and inserts new variable list'''
         self.vars_list.delete(0, END)
         self.selected_indexes = {'x': [], 'y': []}
         for var in variables:
@@ -126,11 +132,13 @@ class Variables_Win(Window):
         self.vars = variables
 
 class Help_Win(Window):
+    '''Window for displaying information to help with use of application'''
     def __init__(self, root: Tk) -> None:
         super().__init__(root)
         self.root.title('Help')
 
 class Main_App:
+    '''Main GUI for selecting file, opening and closing child windows and starting a graph'''
     directory: str = ''
     data: pd.DataFrame
     def __init__(self, root: Tk) -> None:
@@ -241,15 +249,19 @@ class Main_App:
         # ----------------------------------
  
     def set_directory(self) -> None:
+        '''Function for 'Set Directory' button to allow user to specific path for files'''
         self.directory = filedialog.askdirectory() + '/'
         self.get_files()
     
     def file_selection(self, event) -> None:
+        '''Function for updating variables list with those from the file selected,
+        triggered when a user selects a file'''
         filename = self.files.get(self.files.curselection()[0])
         file_path = self.directory + filename
         Thread(target = self.get_variable_names, args = (file_path,) ,daemon = True).start()
     
     def get_variable_names(self, file_path: str) -> None:
+        '''Get the variable names from the selected file'''
         if file_path[-3:] == 'csv':
             df = pd.read_csv(file_path)
         else:
@@ -259,6 +271,7 @@ class Main_App:
         self.vars_win.update(df.columns)
 
     def start_graphing(self) -> None:
+        '''Function for 'Graph' button to open a plot and display plots of the selected variables'''
         self.fig, self.ax = plt.subplots()
         self.lines = []
         for i in self.vars_win.selected_indexes['y']:
@@ -272,6 +285,7 @@ class Main_App:
         plt.show()
     
     def get_files(self) -> None:
+        '''Retrieve files from the set directory which have the correct file type'''
         if self.directory != '':
             self.files.delete(0, END)
             for file in listdir(self.directory):
@@ -279,6 +293,7 @@ class Main_App:
                     self.files.insert(END, file)
         
     def quit_ui(self) -> None:
+        '''Function for cleaning up when main gui is closed'''
         self.vars_win.quit()
         self.help_win.quit()
         self.root.quit()
